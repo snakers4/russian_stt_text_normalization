@@ -1,7 +1,9 @@
-# russian_stt_text_normalization
+# Russian STT Text Normalization
+
 Russian text normalization pipeline for speech-to-text and other applications based on tagging s2s networks.
 
 ## Requirements
+
 - Python >= 3.6
 - [PyTorch](https://pytorch.org/get-started/locally/) >= 1.4 for s2s pipeline
 - [tqdm](https://github.com/tqdm/tqdm) for progress bar
@@ -12,6 +14,7 @@ pip install tqdm
 ```
 
 ## Usage
+
 ```python
 from normalizer import Normalizer
 
