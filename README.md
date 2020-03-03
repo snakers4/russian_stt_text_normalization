@@ -1,3 +1,5 @@
+![Normalization](https://pics.spark-in.me/upload/7c12fea58ff515ffb46df52b6050ace0.jpg)
+
 # Russian STT Text Normalization
 
 Russian text normalization pipeline for speech-to-text and other applications based on tagging s2s networks.
