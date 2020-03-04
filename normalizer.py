@@ -17,8 +17,11 @@ class Normalizer():
         self.model = torch.jit.load(jit_model)
         self.model = self.model.to(self.device)
         self.model.eval()
+        self.max_len = 150
 
     def init_vocabs(self):
+        # Initializes source and target vocabularies
+
         # vocabs
         rus_letters = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
         spec_symbols = '¼³№¾⅞½⅔⅓⅛⅜²'
@@ -52,8 +55,9 @@ class Normalizer():
         upd_string = ''.join([s for i, s in enumerate(string) if i not in flat_unk_ids])
         return upd_string, unk_list
 
-    def norm_string(self, string):
-        # assert len(string) < 200
+    def _norm_string(self, string):
+        # Normalizes chunk
+        assert len(string) < 200
 
         if len(string) == 0:
             return string
@@ -71,19 +75,52 @@ class Normalizer():
         return pred_words
 
     def norm_text(self, text):
-        abstracts = text.split('\n')
-        res_abstracts = []
-        for abstract in tqdm(abstracts):
-            temp_result = ''
-            result = []
-            words = abstract.split(' ')
-            for i, word in enumerate(words):
-                temp_result = ' '.join([temp_result, word])
-                if len(temp_result) > 150 or len(temp_result) > 100 and not re.search(r'[0-9a-zA-Z]', word) or i == len(words) - 1:
-                    result.append(self.norm_string(temp_result.strip(' ')))
-                    temp_result = ''
-            res_abstracts.append(' '.join(result))
-        return '\n'.join(res_abstracts)
+        # Normalizes text
+
+        # Splits sentences to small chunks with weighted length <= max_len:
+        # * weighted length - estimated length of normalized sentence
+        #
+        # 1. Full text is splitted by "ending" symbols (\n\t?!.) to sentences;
+        # 2. Long sentences additionally splitted to chunks: by spaces or just dividing too long words
+
+        splitters = '\n\t?!.'
+        parts = [p for p in re.split(r'({})'.format('|\\'.join(splitters)), text) if p != '']
+        norm_parts = []
+        for part in tqdm(parts):
+            if part in splitters:
+                norm_parts.append(part)
+            else:
+                weighted_string = [7 if symb.isdigit() else 1 for symb in part]
+                weighted_len = sum(weighted_string)
+                if sum(weighted_string) <= self.max_len:
+                    norm_parts.append(self._norm_string(part))
+                else:
+                    spaces = [m.start() for m in re.finditer(' ', part)]
+                    start_point = 0
+                    end_point = 0
+                    curr_point = 0
+
+                    while start_point < len(part):
+                        if curr_point in spaces:
+                            if sum(weighted_string[start_point:curr_point]) < self.max_len:
+                                end_point = curr_point+1
+                            else:
+                                norm_parts.append(self._norm_string(part[start_point:end_point]))
+                                start_point = end_point
+
+                        elif sum(weighted_string[end_point:curr_point]) >= self.max_len:
+                            if end_point > start_point:
+                                norm_parts.append(self._norm_string(part[start_point:end_point]))
+                                start_point = end_point
+                            end_point = curr_point - 1
+                            norm_parts.append(self._norm_string(part[start_point:end_point]))
+                            start_point = end_point
+                        elif curr_point == len(part):
+                            norm_parts.append(self._norm_string(part[start_point:]))
+                            start_point = len(part)
+
+                        curr_point += 1
+        return ''.join(norm_parts)
 
     def decode_words(self, pred, unk_list=[]):
         pred = pred.cpu().numpy()
