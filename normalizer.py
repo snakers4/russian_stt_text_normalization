@@ -2,6 +2,7 @@ import re
 import torch
 from string import printable, punctuation
 from tqdm import tqdm
+import warnings
 
 
 class Normalizer():
@@ -14,8 +15,7 @@ class Normalizer():
 
         self.init_vocabs()
 
-        self.model = torch.jit.load(jit_model)
-        self.model = self.model.to(self.device)
+        self.model = torch.jit.load(jit_model, map_location=device)
         self.model.eval()
         self.max_len = 150
 
@@ -57,7 +57,6 @@ class Normalizer():
 
     def _norm_string(self, string):
         # Normalizes chunk
-        assert len(string) < 200
 
         if len(string) == 0:
             return string
@@ -72,6 +71,8 @@ class Normalizer():
         src = torch.LongTensor(src).unsqueeze(0).to(self.device)
         out = self.model(src, src2tgt)
         pred_words = self.decode_words(out, unk_list)
+        if len(pred_words) > 199:
+            warnings.warn("Sentence {} is too long".format(string), Warning)
         return pred_words
 
     def norm_text(self, text):
