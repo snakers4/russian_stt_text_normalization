@@ -84,7 +84,7 @@ class Normalizer():
         # 1. Full text is splitted by "ending" symbols (\n\t?!.) to sentences;
         # 2. Long sentences additionally splitted to chunks: by spaces or just dividing too long words
 
-        splitters = '\n\t?!.'
+        splitters = '\n\t?!'
         parts = [p for p in re.split(r'({})'.format('|\\'.join(splitters)), text) if p != '']
         norm_parts = []
         for part in tqdm(parts):
