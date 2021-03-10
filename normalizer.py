@@ -69,7 +69,8 @@ class Normalizer():
         src2tgt = torch.LongTensor(src2tgt).to(self.device)
 
         src = torch.LongTensor(src).unsqueeze(0).to(self.device)
-        out = self.model(src, src2tgt)
+        with torch.no_grad():
+            out = self.model(src, src2tgt)
         pred_words = self.decode_words(out, unk_list)
         if len(pred_words) > 199:
             warnings.warn("Sentence {} is too long".format(string), Warning)
