@@ -124,14 +124,18 @@ class Normalizer():
                         curr_point += 1
         return ''.join(norm_parts)
 
-    def decode_words(self, pred, unk_list=[]):
+    def decode_words(self, pred, unk_list=None):
+        if unk_list is None:
+            unk_list = []
         pred = pred.cpu().numpy()
         pred_words = "".join(self.lookup_words(x=pred,
                                                vocab={i: w for w, i in self.tgt_vocab.items()},
                                                unk_list=unk_list))
         return pred_words
 
-    def lookup_words(self, x, vocab, unk_list=[]):
+    def lookup_words(self, x, vocab, unk_list=None):
+        if unk_list is None:
+            unk_list = []
         result = []
         for i in x:
             if i == self.unk_index:
